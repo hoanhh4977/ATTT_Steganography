@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StegoTool — Image & Audio Steganography</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <div class="navbar-brand">⬡ Stego<span>Tool</span></div>
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="embed">IMAGE EMBED</button>
+    <button class="tab-btn" data-tab="extract">IMAGE EXTRACT</button>
+    <button class="tab-btn" data-tab="audio">AUDIO</button>
+    <button class="tab-btn" data-tab="analyze">ANALYZE</button>
+    <button class="tab-btn" data-tab="bitplane">BIT-PLANE</button>
+    <button class="tab-btn" data-tab="compare">COMPARE</button>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- ═══════════════ IMAGE EMBED TAB ═══════════════ -->
+  <div class="tab-panel active" id="tab-embed">
+    <div class="two-col">
+      <div class="card">
+        <p class="section-title">Cover Image</p>
+        <div class="drop-zone" id="embed-drop">
+          <input type="file" id="embed-file" accept="image/png,image/bmp" aria-label="Upload cover image" />
+          <div class="hint" id="embed-hint">
+            <svg width="32" height="32" fill="none" stroke="#94A3B8" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            Drop PNG / BMP here<br /><span style="font-size:0.75rem">or click to browse</span>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="field">
+            <label for="embed-message">Secret Message</label>
+            <textarea id="embed-message" placeholder="Enter your secret message…" rows="3"></textarea>
+          </div>
+          <div class="field">
+            <label for="embed-password">Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="embed-password" placeholder="Encryption password" autocomplete="off" />
+              <button class="pw-toggle" type="button" onclick="togglePw('embed-password', this)">👁</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Embedding Mode</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active" data-mode="sequential" onclick="setMode('embed', 'sequential', this)">Sequential</button>
+              <button class="mode-btn" data-mode="scattered" onclick="setMode('embed', 'scattered', this)">Scattered</button>
+            </div>
+          </div>
+          <input type="hidden" id="embed-mode" value="sequential" />
+          <button class="btn btn-primary btn-full" id="btn-embed" onclick="doEmbed()">
+            <div class="spinner" id="spin-embed"></div>
+            <span id="lbl-embed">🔒 EMBED</span>
+          </button>
+        </div>
+        <div class="result-box" id="embed-result"></div>
+      </div>
+
+      <div class="card">
+        <p class="section-title">Stego Output</p>
+        <div class="drop-zone" id="embed-output-preview" style="cursor:default">
+          <div class="hint" id="embed-output-hint">
+            <svg width="32" height="32" fill="none" stroke="#94A3B8" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+            Stego image will appear here
+          </div>
+        </div>
+        <div class="metrics" id="embed-metrics" style="display:none">
+          <div class="metric-row">
+            <span class="metric-label">PSNR</span>
+            <div class="progress-bar"><div class="progress-fill" id="psnr-fill" style="background:linear-gradient(90deg,#00FF88,#00D4FF)"></div></div>
+            <span class="metric-val" id="psnr-val">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Capacity Used</span>
+            <div class="progress-bar"><div class="progress-fill" id="cap-fill" style="background:#00D4FF"></div></div>
+            <span class="metric-val" id="cap-val">—</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-download" style="margin-top:12px;display:none" onclick="downloadStego()">↓ Download Stego Image</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ IMAGE EXTRACT TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-extract">
+    <div style="max-width:540px;margin:0 auto">
+      <div class="card">
+        <p class="section-title">Stego Image</p>
+        <div class="drop-zone" id="extract-drop">
+          <input type="file" id="extract-file" accept="image/png,image/bmp" aria-label="Upload stego image" />
+          <div class="hint" id="extract-hint">
+            <svg width="32" height="32" fill="none" stroke="#94A3B8" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            Drop stego PNG / BMP here<br /><span style="font-size:0.75rem">or click to browse</span>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="field">
+            <label for="extract-password">Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="extract-password" placeholder="Decryption password" autocomplete="off" />
+              <button class="pw-toggle" type="button" onclick="togglePw('extract-password', this)">👁</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Embedding Mode (must match embed)</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active" data-mode="sequential" onclick="setMode('extract', 'sequential', this)">Sequential</button>
+              <button class="mode-btn" data-mode="scattered" onclick="setMode('extract', 'scattered', this)">Scattered</button>
+            </div>
+          </div>
+          <input type="hidden" id="extract-mode" value="sequential" />
+          <button class="btn btn-primary btn-full" id="btn-extract" onclick="doExtract()">
+            <div class="spinner" id="spin-extract"></div>
+            <span id="lbl-extract">🔓 EXTRACT</span>
+          </button>
+        </div>
+        <div class="result-box" id="extract-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ AUDIO TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-audio">
+    <div class="two-col">
+
+      <!-- Audio Embed -->
+      <div class="card">
+        <p class="section-title">🎵 Nhúng tin vào âm thanh</p>
+        <div class="drop-zone" id="audio-embed-drop">
+          <input type="file" id="audio-embed-file" accept="audio/wav,.wav" aria-label="Upload WAV file" />
+          <div class="hint" id="audio-embed-hint">
+            <svg width="32" height="32" fill="none" stroke="#94A3B8" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z"/></svg>
+            Drop WAV file here<br /><span style="font-size:0.75rem">or click to browse</span>
+          </div>
+          <div id="audio-embed-name" style="display:none;padding:8px;color:#94A3B8;font-size:0.85rem;text-align:center"></div>
+        </div>
+        <div class="form-section">
+          <div class="field">
+            <label for="audio-embed-message">Secret Message</label>
+            <textarea id="audio-embed-message" placeholder="Enter your secret message…" rows="3"></textarea>
+          </div>
+          <div class="field">
+            <label for="audio-embed-password">Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="audio-embed-password" placeholder="Encryption password" autocomplete="off" />
+              <button class="pw-toggle" type="button" onclick="togglePw('audio-embed-password', this)">👁</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Embedding Mode</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active" data-mode="sequential" onclick="setMode('audio-embed', 'sequential', this)">Sequential</button>
+              <button class="mode-btn" data-mode="scattered" onclick="setMode('audio-embed', 'scattered', this)">Scattered</button>
+            </div>
+          </div>
+          <input type="hidden" id="audio-embed-mode" value="sequential" />
+          <button class="btn btn-primary btn-full" id="btn-audio-embed" onclick="doAudioEmbed()">
+            <div class="spinner" id="spin-audio-embed"></div>
+            <span id="lbl-audio-embed">🔒 EMBED INTO AUDIO</span>
+          </button>
+        </div>
+        <div class="result-box" id="audio-embed-result"></div>
+        <div id="audio-embed-output" style="display:none;margin-top:12px">
+          <audio id="audio-embed-player" controls style="width:100%;margin-bottom:8px"></audio>
+          <button class="btn btn-primary btn-full" onclick="downloadStegoAudio()">↓ Download Stego WAV</button>
+        </div>
+      </div>
+
+      <!-- Audio Extract -->
+      <div class="card">
+        <p class="section-title">🔓 Trích xuất từ âm thanh</p>
+        <div class="drop-zone" id="audio-extract-drop">
+          <input type="file" id="audio-extract-file" accept="audio/wav,.wav" aria-label="Upload stego WAV" />
+          <div class="hint" id="audio-extract-hint">
+            <svg width="32" height="32" fill="none" stroke="#94A3B8" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z"/></svg>
+            Drop stego WAV here<br /><span style="font-size:0.75rem">or click to browse</span>
+          </div>
+          <div id="audio-extract-name" style="display:none;padding:8px;color:#94A3B8;font-size:0.85rem;text-align:center"></div>
+        </div>
+        <div class="form-section">
+          <div class="field">
+            <label for="audio-extract-password">Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="audio-extract-password" placeholder="Decryption password" autocomplete="off" />
+              <button class="pw-toggle" type="button" onclick="togglePw('audio-extract-password', this)">👁</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Embedding Mode (must match embed)</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active" data-mode="sequential" onclick="setMode('audio-extract', 'sequential', this)">Sequential</button>
+              <button class="mode-btn" data-mode="scattered" onclick="setMode('audio-extract', 'scattered', this)">Scattered</button>
+            </div>
+          </div>
+          <input type="hidden" id="audio-extract-mode" value="sequential" />
+          <button class="btn btn-primary btn-full" id="btn-audio-extract" onclick="doAudioExtract()">
+            <div class="spinner" id="spin-audio-extract"></div>
+            <span id="lbl-audio-extract">🔓 EXTRACT FROM AUDIO</span>
+          </button>
+        </div>
+        <div class="result-box" id="audio-extract-result"></div>
+
+        <!-- Info box -->
+        <div style="margin-top:16px;padding:12px;background:#0F172A;border-radius:8px;font-size:0.8rem;color:#64748B">
+          <strong style="color:#5EEAD4">Nguyên lý:</strong> Mỗi sample WAV 16-bit có 1 LSB. Thay LSB của từng sample → biên độ thay đổi tối đa ±1/65536 → tai người không nghe được.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ ANALYZE TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-analyze">
+    <div class="two-col">
+      <div class="card">
+        <p class="section-title">Image to Analyze</p>
+        <div class="drop-zone" id="analyze-drop">
+          <input type="file" id="analyze-file" accept="image/png,image/bmp" aria-label="Upload image to analyze" />
+          <div class="hint" id="analyze-hint">
+            <svg width="32" height="32" fill="none" stroke="#94A3B8" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            Drop any PNG / BMP here<br /><span style="font-size:0.75rem">or click to browse</span>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="field">
+            <label for="analyze-threshold">Detection Threshold — RS/SPA rate (default 0.15)</label>
+            <input type="number" id="analyze-threshold" value="0.15" min="0.01" max="1" step="0.01" />
+          </div>
+          <button class="btn btn-primary btn-full" id="btn-analyze" onclick="doAnalyze()">
+            <div class="spinner" id="spin-analyze"></div>
+            <span id="lbl-analyze">🔍 ANALYZE</span>
+          </button>
+        </div>
+        <div class="result-box" id="analyze-error"></div>
+      </div>
+
+      <div class="card">
+        <p class="section-title">Analysis Result</p>
+        <div id="analyze-result" style="display:none">
+          <div class="score-display">
+            <span class="score-num" id="rs-num">—</span>
+            <span class="score-label">RS embedding rate</span>
+            <span class="verdict" id="verdict-badge"></span>
+          </div>
+          <div class="metric-row" style="margin-bottom:6px">
+            <span class="metric-label">RS Rate</span>
+            <div class="progress-bar"><div class="progress-fill" id="rs-fill" style="background:linear-gradient(90deg,#00FF88,#FF4444)"></div></div>
+            <span class="metric-val" id="rs-val">—</span>
+          </div>
+          <div class="metric-row" style="margin-bottom:6px">
+            <span class="metric-label">SPA Rate</span>
+            <div class="progress-bar"><div class="progress-fill" id="spa-fill" style="background:linear-gradient(90deg,#00FF88,#FF4444)"></div></div>
+            <span class="metric-val" id="spa-val">—</span>
+          </div>
+          <div class="metric-row" style="margin-bottom:14px">
+            <span class="metric-label">χ² score</span>
+            <div class="progress-bar"><div class="progress-fill" id="chi2-fill" style="background:#00D4FF"></div></div>
+            <span class="metric-val" id="chi2-val">—</span>
+          </div>
+        </div>
+        <div class="chart-wrap" id="chart-wrap">
+          <img id="chart-img" src="" alt="Histogram analysis chart" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ BIT-PLANE TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-bitplane">
+    <div class="card" style="max-width:980px;margin:0 auto">
+      <p class="section-title">Bit-Plane Viewer — Tại sao LSB vô hình với mắt người?</p>
+      <p style="color:#64748B;font-size:0.85rem;margin-bottom:16px">Bit 7 (MSB) = ảnh gốc rõ nét. Bit 0 (LSB) = nhiễu ngẫu nhiên. Chúng ta thay thế bit 0 → vô hình.</p>
+      <div class="drop-zone" id="bitplane-drop" style="max-height:160px">
+        <input type="file" id="bitplane-file" accept="image/png,image/bmp,image/jpeg" aria-label="Upload image for bit-plane analysis" />
+        <div class="hint" id="bitplane-hint">
+          <svg width="28" height="28" fill="none" stroke="#94A3B8" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 6px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+          Upload image to see its 8 bit-planes
+        </div>
+      </div>
+
+      <div id="bitplane-grid" style="display:none;margin-top:20px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <!-- Planes generated by JS -->
+        </div>
+        <p style="text-align:center;color:#64748B;font-size:0.8rem;margin-top:12px">
+          Mỗi ô = 1 bit-plane của kênh đỏ (R). Pixel sáng = bit = 1, tối = bit = 0.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ COMPARE TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-compare">
+    <div class="card" style="max-width:980px;margin:0 auto">
+      <p class="section-title">So sánh Cover vs Stego — Pixel Diff & PSNR</p>
+      <p style="color:#64748B;font-size:0.85rem;margin-bottom:16px">Upload ảnh gốc và ảnh stego để xem sự khác biệt (khuếch đại ×64 để thấy rõ).</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <p style="color:#94A3B8;font-size:0.8rem;margin-bottom:6px">Ảnh gốc (Cover)</p>
+          <div class="drop-zone" id="compare-cover-drop" style="max-height:140px">
+            <input type="file" id="compare-cover-file" accept="image/png,image/bmp" />
+            <div class="hint" id="compare-cover-hint" style="font-size:0.8rem">Drop cover image</div>
+          </div>
+        </div>
+        <div>
+          <p style="color:#94A3B8;font-size:0.8rem;margin-bottom:6px">Ảnh stego</p>
+          <div class="drop-zone" id="compare-stego-drop" style="max-height:140px">
+            <input type="file" id="compare-stego-file" accept="image/png,image/bmp" />
+            <div class="hint" id="compare-stego-hint" style="font-size:0.8rem">Drop stego image</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-bottom:16px" onclick="doCompare()">🔬 COMPARE</button>
+
+      <div id="compare-result" style="display:none">
+        <!-- PSNR badge -->
+        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <div style="background:#0F172A;padding:10px 18px;border-radius:8px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:700;color:#00D4FF" id="cmp-psnr">—</div>
+            <div style="font-size:0.75rem;color:#64748B">PSNR</div>
+          </div>
+          <div style="background:#0F172A;padding:10px 18px;border-radius:8px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:700;color:#00FF88" id="cmp-mse">—</div>
+            <div style="font-size:0.75rem;color:#64748B">MSE</div>
+          </div>
+          <div style="background:#0F172A;padding:10px 18px;border-radius:8px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:700;color:#94A3B8" id="cmp-maxdiff">—</div>
+            <div style="font-size:0.75rem;color:#64748B">Max pixel diff</div>
+          </div>
+        </div>
+
+        <!-- Three canvases: cover, stego, diff -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          <div style="text-align:center">
+            <p style="color:#94A3B8;font-size:0.78rem;margin-bottom:4px">Cover</p>
+            <canvas id="cmp-canvas-cover" style="width:100%;border-radius:6px;background:#1E293B"></canvas>
+          </div>
+          <div style="text-align:center">
+            <p style="color:#94A3B8;font-size:0.78rem;margin-bottom:4px">Stego</p>
+            <canvas id="cmp-canvas-stego" style="width:100%;border-radius:6px;background:#1E293B"></canvas>
+          </div>
+          <div style="text-align:center">
+            <p style="color:#5EEAD4;font-size:0.78rem;margin-bottom:4px">Pixel Diff (×64 amplified)</p>
+            <canvas id="cmp-canvas-diff" style="width:100%;border-radius:6px;background:#1E293B"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

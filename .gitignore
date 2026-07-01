@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs & temp
+*.log
+*.tmp
+debug-*.png
+
+# Secrets
+.env
+.env.*
+
+# Build outputs (giữ presentation.pptx nếu muốn chia sẻ, xoá dòng này để exclude)
+# *.pptx
+
+# File cá nhân — thay bằng ảnh trung tính trước khi push
+test.png
+
+# Tài liệu nội bộ không liên quan đến repo
+*.pdf
+exam-notes/
+plan_steganography.md
+.agents
+.claude
+.specify
+report/
+slides-pptx/
+specs/
+.playwright-cli/
+.pytest_cache/
+presentation-script.md
